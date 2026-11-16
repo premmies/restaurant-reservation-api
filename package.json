@@ -1,0 +1,15 @@
+{
+  "name": "restaurant-reservation",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Restaurant reservation project - database foundation",
+  "scripts": {
+    "db:setup": "node scripts/setup-db.js",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "dotenv": "^17.4.2",
+    "mongoose": "^9.9.4"
+  }
+}
