@@ -68,6 +68,39 @@ let server;
   assert.equal((await request('GET')).body.count, 0);
   assert.equal((await Reservation.findById(records[1]._id)).tables, 1);
   console.log('Requirements 4-6 passed: own list/detail, edits, deletion, ownership isolation, validation, persistence and auth.');
+  const adminId = new mongoose.Types.ObjectId();
+  users.push(adminId);
+  const admin = await User.create({ _id: adminId, name: 'Temporary Admin Check',
+    tel: '020000000', email: `admin-${adminId}@example.com`, password: 'TestPassword123!', role: 'admin' });
+  const adminToken = admin.getSignedJwtToken();
+  const adminList = await request('GET', '', undefined, adminToken);
+  assert.equal(adminList.status, 200);
+  assert.ok(adminList.body.data.some(record => record._id === String(records[1]._id)));
+  assert.equal((await request('GET', other, undefined, adminToken)).status, 200);
+  for (const method of ['GET', 'PUT', 'DELETE']) {
+    const body = method === 'PUT' ? { tables: 2 } : undefined;
+    assert.equal((await request(method, '/invalid', body, adminToken)).status, 400);
+    assert.equal((await request(method, '/' + new mongoose.Types.ObjectId(), body, adminToken)).status, 404);
+  }
+  for (const body of [{ tables: 4 }, { reservationDate: '2026-02-30' }, { user: String(adminId) }]) {
+    assert.equal((await request('PUT', other, body, adminToken)).status, 400);
+  }
+  assert.equal((await request('PUT', other, { restaurant: String(new mongoose.Types.ObjectId()) }, adminToken)).status, 404);
+  const adminEdit = await request('PUT', other, { tables: 3, reservationDate: '2026-12-03', restaurant: String(restaurants[1]) }, adminToken);
+  assert.equal(adminEdit.status, 200);
+  assert.equal(adminEdit.body.data.user, String(users[1]));
+  const adminSaved = await Reservation.findById(records[1]._id);
+  assert.equal(adminSaved.tables, 3);
+  assert.equal(String(adminSaved.restaurant), String(restaurants[1]));
+  assert.equal(adminSaved.reservationDate.toISOString(), '2026-12-03T00:00:00.000Z');
+  // Authorization uses the current database role, not a caller-supplied role or stale token claim.
+  await User.updateOne({ _id: adminId }, { $set: { role: 'user' } });
+  assert.equal((await request('DELETE', other, undefined, adminToken)).status, 404);
+  await User.updateOne({ _id: adminId }, { $set: { role: 'admin' } });
+  assert.equal((await request('DELETE', other, undefined, adminToken)).status, 200);
+  assert.equal(await Reservation.findById(records[1]._id), null);
+  assert.equal((await request('DELETE', other, undefined, adminToken)).status, 404);
+  console.log('Requirements 7-9 passed: admin list/detail, cross-user editing/deletion, validation, ownership preservation and role revocation.');
 })().catch(err => { console.error(err.message); process.exitCode = 1; }).finally(async () => {
   if (mongoose.connection.readyState === 1) {
     await Reservation.deleteMany({ user: { $in: users } });

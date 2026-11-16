@@ -8,14 +8,17 @@ function ownershipFilter(req, res) {
     res.status(400).json({ success: false, message: 'Invalid reservation ID' });
     return null;
   }
-  return { _id: req.params.id, user: req.user.id };
+  return req.user.role === 'admin'
+    ? { _id: req.params.id }
+    : { _id: req.params.id, user: req.user.id };
 }
 function notFound(res) {
   return res.status(404).json({ success: false, message: 'Reservation not found' });
 }
 
 exports.getReservations = async (req, res) => {
-  const reservations = await Reservation.find({ user: req.user.id })
+  const filter = req.user.role === 'admin' ? {} : { user: req.user.id };
+  const reservations = await Reservation.find(filter)
     .populate(restaurantDetails).sort({ reservationDate: 1, _id: 1 });
   res.status(200).json({ success: true, count: reservations.length, data: reservations });
 };

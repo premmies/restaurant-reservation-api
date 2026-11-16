@@ -1,6 +1,6 @@
 # Restaurant Reservation
 
-Project #5 database foundation. REST API backend only; no frontend required. Requirements 1-6 are implemented: authentication, restaurant listing and creating, viewing, editing and deleting your own reservations.
+Project #5 database foundation. REST API backend only; no frontend required. Requirements 1-9 are implemented: authentication, restaurant listing, user reservation management and admin reservation management.
 
 ## Setup
 
@@ -17,7 +17,7 @@ The table limit is currently interpreted as 1-3 tables per reservation. Any tota
 
 Use validated document save/create for writes. Query updates require runValidators: true. The reservation endpoint checks that the selected restaurant exists and takes ownership from the authenticated user. Time-slot availability is outside the date-only reservation contract.
 
-Remaining requirements: admin access to all reservations (7-9). Public registration always creates a regular user.
+Admins may view, edit and delete any reservation. Public registration always creates a regular user.
 
 ## Authentication (requirements 1 and 2)
 
@@ -44,7 +44,7 @@ Run npm run test:reservations to verify against Atlas using temporary records wh
 
 ## Requirements 4-6
 
-All routes below require Authorization: Bearer TOKEN and restrict records to the logged-in owner. Another user's ID returns 404, as does a nonexistent reservation. Invalid IDs return 400. No admin override is implemented yet.
+All routes below require Authorization: Bearer TOKEN. Regular users are restricted to their own reservations; admins can access any reservation. Another user's ID returns 404 for regular users, as does a nonexistent reservation. Invalid IDs return 400.
 
 - GET /api/v1/reservations: list your reservations with restaurant details.
 - GET /api/v1/reservations/:id: view one of your reservations.
@@ -54,3 +54,13 @@ All routes below require Authorization: Bearer TOKEN and restrict records to the
 Reimport the Postman collection. Run Login, List restaurants, Create reservation, My reservations, Get my reservation, Edit my reservation, then Delete my reservation. Creation automatically saves reservationId. Deletion removes that reservation from Atlas.
 
 Run npm run test:own-reservations for the live ownership and edit/delete checks. Test fixtures are cleaned up afterward.
+
+## Admin access (requirements 7-9)
+
+Admins use the same GET /api/v1/reservations, GET /api/v1/reservations/:id, PUT /api/v1/reservations/:id and DELETE /api/v1/reservations/:id endpoints. The stored user role determines access on each request. Admins can see all reservations, edit dates/table counts/restaurants, and delete any reservation. Validation remains the same and reservation ownership cannot be changed.
+
+To prepare your own admin account, register normally, then use Atlas Browse Collections > restaurant_reservation > users to find your account by email and change role from user to admin. Log in using that account. Public registration intentionally cannot grant admin access. No permanent admin account or password is created by tests.
+
+In Postman, use the Admin - Requirements 7 to 9 folder. Set adminEmail and adminPassword locally, then run Admin login. Set adminReservationId to a disposable test reservation belonging to another user, then view, edit and delete it. Admin requests use adminToken separately from the normal user token. Do not commit exported credentials or tokens.
+
+The test:own-reservations script now checks requirements 4-9, including administrator operations and role revocation.
