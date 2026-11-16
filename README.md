@@ -1,10 +1,10 @@
 # Restaurant Reservation
 
-Project #5 database foundation. REST API backend only; no frontend required. Requirements 1-9 are implemented: authentication, restaurant listing, user reservation management and admin reservation management.
+Project #5 database foundation. REST API backend only; no frontend required. Requirements 1-12 are implemented: authentication, restaurant listing, user reservation management, admin reservation management and analytics, and email notifications.
 
 ## Setup
 
-Run npm install. Copy config/config.env.example to config/config.env and set MONGO_URI to YOUR MongoDB Atlas cluster connection string. Then run npm run db:setup.
+Run npm install. Copy config/config.env.example to config/config.env and set MONGO_URI to YOUR MongoDB Atlas cluster connection string. Configure the SMTP values in the same file for email-change and reservation-edit notifications. Then run npm run db:setup.
 The connection uses the restaurant_reservation database. Setup creates collections and indexes without deleting data. Real credentials are ignored by Git.
 
 ## Collections
@@ -26,7 +26,10 @@ Run npm start (or npm run dev) from this folder. Default port: 5001, configured 
 - POST http://localhost:5001/api/v1/auth/register ? JSON name, tel, email, password. Returns 200 with JWT and HTTP-only token cookie. Public registration always creates a user.
 - POST http://localhost:5001/api/v1/auth/login ? JSON email, password. Returns the same token response.
 - GET http://localhost:5001/api/v1/auth/me ? Authorization: Bearer TOKEN.
+- PATCH http://localhost:5001/api/v1/auth/email ? Authorization: Bearer TOKEN and JSON `{ "email": "new-address@example.com" }`. The change takes effect immediately; notification emails are sent to both the previous and new addresses.
 - GET http://localhost:5001/api/v1/auth/logout ? Authorization: Bearer TOKEN; invalidates all JWTs issued for that account and clears the token cookie. Log in again to receive a valid token.
+
+SMTP delivery uses `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASSWORD` and `SMTP_FROM`. If delivery fails after an email change, the response reports that the address was updated but one or more notices could not be sent.
 
 Import postman/restaurant-auth.postman_collection.json into Postman. Change email for each new registration; registration/login automatically save token for the protected requests. Set Body to raw JSON for POST requests. The API uses Express, Mongoose, bcryptjs, jsonwebtoken, cookie-parser, rate limiting and Mongo sanitization as in VacQ. Reservation routes are documented below.
 
@@ -51,6 +54,8 @@ All routes below require Authorization: Bearer TOKEN. Regular users are restrict
 - PUT /api/v1/reservations/:id: edit reservationDate (YYYY-MM-DD), tables (integer 1-3), and/or restaurant (existing restaurant ID). Omitted fields stay unchanged. Empty bodies and fields such as user or _id are rejected.
 - DELETE /api/v1/reservations/:id: delete your reservation; returns 200 with an empty data object.
 
+After a successful reservation edit, the reservation owner receives an email with the updated date and table count. If delivery fails, the response reports that the reservation was updated but the notification could not be sent.
+
 Reimport the Postman collection. Run Login, List restaurants, Create reservation, My reservations, Get my reservation, Edit my reservation, then Delete my reservation. Creation automatically saves reservationId. Deletion removes that reservation from Atlas.
 
 Run npm run test:own-reservations for the live ownership and edit/delete checks. Test fixtures are cleaned up afterward.
@@ -64,3 +69,11 @@ To prepare your own admin account, register normally, then use Atlas Browse Coll
 In Postman, use the Admin - Requirements 7 to 9 folder. Set adminEmail and adminPassword locally, then run Admin login. Set adminReservationId to a disposable test reservation belonging to another user, then view, edit and delete it. Admin requests use adminToken separately from the normal user token. Do not commit exported credentials or tokens.
 
 The test:own-reservations script now checks requirements 4-9, including administrator operations and role revocation.
+
+## Requirements 10-12
+
+- GET `/api/v1/admin/reservation-metrics` requires an admin token. It returns total reservations, reservations per reservation date, reservation creation hours, and reservations grouped by restaurant. Booking hours use the UTC hour when the reservation record was created because reservations currently store a date but no scheduled time.
+- PATCH `/api/v1/auth/email` is available to authenticated users and sends a notice to both addresses after the email is changed.
+- Editing a reservation sends an update notice to the reservation owner, including when an admin performs the edit.
+
+Run `npm run test:features` to check admin-only analytics, email changes and notifications, and reservation-edit notifications. The script creates temporary Atlas records and removes them afterward; email delivery is stubbed for this test.

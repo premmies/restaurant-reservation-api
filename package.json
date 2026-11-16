@@ -10,6 +10,7 @@
     "dev": "nodemon server.js",
     "test:auth": "node scripts/verify-auth.js",
     "test:reservations": "node scripts/verify-reservations.js",
+    "test:features": "node scripts/verify-new-features.js",
     "db:seed-demo": "node scripts/seed-demo-restaurant.js",
     "test:own-reservations": "node scripts/verify-own-reservations.js"
   },
@@ -23,6 +24,7 @@
     "express-xss-sanitizer": "^2.0.2",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.9.4",
+    "nodemailer": "^10.6.0",
     "swagger-jsdoc": "^6.0.0",
     "swagger-ui-express": "^5.0.1"
   },
