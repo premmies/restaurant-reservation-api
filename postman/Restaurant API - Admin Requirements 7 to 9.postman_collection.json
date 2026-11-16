@@ -558,22 +558,22 @@
     },
     {
       "key": "adminEmail",
-      "value": "admin@example.com"
+      "value": "1794828089@example.com"
     },
     {
       "key": "adminPassword",
-      "value": "AdminPassword123!"
+      "value": "TestPassword123!"
     },
     {
       "key": "adminToken",
-      "value": ""
-    },
-    {
-      "key": "adminUserId",
-      "value": ""
+      "secret": true
     },
     {
       "key": "userToken",
+      "secret": true
+    },
+    {
+      "key": "adminUserId",
       "value": ""
     },
     {

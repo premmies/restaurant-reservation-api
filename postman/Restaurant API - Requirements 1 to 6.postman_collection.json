@@ -57,6 +57,52 @@
           "response": []
         },
         {
+          "name": "Register Validation",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "\nconst data = pm.response.json();\npm.test('Missing feild', () => {\n  pm.response.to.have.status(400);\n});\n\n"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Postman Test\",\n  \"email\": \"{{$timestamp}}@example.com\",\n  \"password\": \"{{password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
           "name": "Login",
           "event": [
             {
@@ -213,6 +259,60 @@
             "body": {
               "mode": "raw",
               "raw": "{\n  \"reservationDate\": \"2026-12-01\",\n  \"tables\": 3\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/restaurants/{{restaurantId}}/reservations",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "restaurants",
+                "{{restaurantId}}",
+                "reservations"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create reservation Failed",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Rserve more than 3\", function () {\n    pm.response.to.have.status(400);\n});\n\n"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reservationDate\": \"2026-12-01\",\n  \"tables\": 60\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -464,18 +564,14 @@
           "response": []
         },
         {
-          "name": "Logout Copy",
+          "name": "Logout",
           "event": [
             {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Requirement 2: registered user can log out', () => {",
-                  "  pm.response.to.have.status(200);",
-                  "  pm.expect(pm.response.json().success).to.eql(true);",
-                  "  pm.expect(pm.response.headers.get('Set-Cookie')).to.match(/token=none/i);",
-                  "});"
+                  "pm.test('Requirement 2: registered user can log out', () => {\n  pm.response.to.have.status(200);\n  pm.expect(pm.response.json().success).to.eql(true);\n  pm.expect(pm.response.headers.get('Set-Cookie')).to.match(/token=none/i);\n});"
                 ]
               }
             }
@@ -563,11 +659,11 @@
     },
     {
       "key": "token",
-      "secret": true
+      "value": ""
     },
     {
       "key": "restaurantId",
-      "value": ""
+      "value": "de1000000000000000000002"
     },
     {
       "key": "reservationId",
@@ -583,7 +679,7 @@
     },
     {
       "key": "adminToken",
-      "secret": true
+      "value": ""
     },
     {
       "key": "adminReservationId",
