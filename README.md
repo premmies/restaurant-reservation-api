@@ -1,6 +1,6 @@
 # Restaurant Reservation
 
-Project #5 database foundation. REST API backend only; no frontend required. Requirements 1-3 are implemented: authentication, restaurant listing and reservation creation.
+Project #5 database foundation. REST API backend only; no frontend required. Requirements 1-6 are implemented: authentication, restaurant listing and creating, viewing, editing and deleting your own reservations.
 
 ## Setup
 
@@ -17,7 +17,7 @@ The table limit is currently interpreted as 1-3 tables per reservation. Any tota
 
 Use validated document save/create for writes. Query updates require runValidators: true. The reservation endpoint checks that the selected restaurant exists and takes ownership from the authenticated user. Time-slot availability is outside the date-only reservation contract.
 
-Remaining requirements: viewing, editing and deleting reservations, including admin access. Public registration always creates a regular user.
+Remaining requirements: admin access to all reservations (7-9). Public registration always creates a regular user.
 
 ## Authentication (requirements 1 and 2)
 
@@ -28,7 +28,7 @@ Run npm start (or npm run dev) from this folder. Default port: 5001, configured 
 - GET http://localhost:5001/api/v1/auth/me ? Authorization: Bearer TOKEN.
 - GET http://localhost:5001/api/v1/auth/logout ? Authorization: Bearer TOKEN; replaces the token cookie, following VacQ. Previously issued bearer JWTs remain valid until expiration; remove the token from Postman after logout.
 
-Import postman/restaurant-auth.postman_collection.json into Postman. Change email for each new registration; registration/login automatically save token for the protected requests. Set Body to raw JSON for POST requests. The API uses Express, Mongoose, bcryptjs, jsonwebtoken, cookie-parser, rate limiting and Mongo sanitization as in VacQ. Reservation viewing, editing and deletion are not implemented yet.
+Import postman/restaurant-auth.postman_collection.json into Postman. Change email for each new registration; registration/login automatically save token for the protected requests. Set Body to raw JSON for POST requests. The API uses Express, Mongoose, bcryptjs, jsonwebtoken, cookie-parser, rate limiting and Mongo sanitization as in VacQ. Reservation routes are documented below.
 
 ## Requirement 3
 
@@ -41,3 +41,16 @@ The assignment specifies a date, so this endpoint does not schedule time slots o
 Run npm run db:seed-demo to add one clearly labeled fictional restaurant for Postman testing without replacing existing restaurants. Run List restaurants before Create reservation in the imported collection; the restaurant ID is saved automatically.
 
 Run npm run test:reservations to verify against Atlas using temporary records which are removed afterward.
+
+## Requirements 4-6
+
+All routes below require Authorization: Bearer TOKEN and restrict records to the logged-in owner. Another user's ID returns 404, as does a nonexistent reservation. Invalid IDs return 400. No admin override is implemented yet.
+
+- GET /api/v1/reservations: list your reservations with restaurant details.
+- GET /api/v1/reservations/:id: view one of your reservations.
+- PUT /api/v1/reservations/:id: edit reservationDate (YYYY-MM-DD), tables (integer 1-3), and/or restaurant (existing restaurant ID). Omitted fields stay unchanged. Empty bodies and fields such as user or _id are rejected.
+- DELETE /api/v1/reservations/:id: delete your reservation; returns 200 with an empty data object.
+
+Reimport the Postman collection. Run Login, List restaurants, Create reservation, My reservations, Get my reservation, Edit my reservation, then Delete my reservation. Creation automatically saves reservationId. Deletion removes that reservation from Atlas.
+
+Run npm run test:own-reservations for the live ownership and edit/delete checks. Test fixtures are cleaned up afterward.
