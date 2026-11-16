@@ -1,5 +1,6 @@
 // controllers/auth.js
 const User = require('../models/User');
+const { sendNotifications } = require('../utils/notifications');
 
 //@desc      Register user
 //@route     POST /api/v1/auth/register
@@ -94,6 +95,57 @@ exports.getMe = async (req, res, next) => {
         data: user
     });
 }
+
+exports.changeEmail = async (req, res) => {
+    const { email } = req.body || {};
+    if (typeof email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+        return res.status(400).json({ success: false, message: 'Provide a valid email address' });
+    }
+
+    const oldEmail = req.user.email;
+    const newEmail = email.trim().toLowerCase();
+    if (newEmail === oldEmail) {
+        return res.status(400).json({ success: false, message: 'New email must differ from the current email' });
+    }
+
+    let updatedUser;
+    try {
+        updatedUser = await User.findOneAndUpdate(
+            { _id: req.user._id },
+            { $set: { email: newEmail } },
+            { returnDocument: 'after', runValidators: true }
+        );
+    } catch (err) {
+        if (err.code === 11000) {
+            return res.status(409).json({ success: false, message: 'Email address is already registered' });
+        }
+        throw err;
+    }
+    if (!updatedUser) return res.status(404).json({ success: false, message: 'User not found' });
+
+    const { failedCount } = await sendNotifications([
+        {
+            to: oldEmail,
+            subject: 'Restaurant account email changed',
+            text: `The email address for your restaurant account was changed to ${newEmail}. If you did not make this change, contact support.`
+        },
+        {
+            to: newEmail,
+            subject: 'Email address added to your restaurant account',
+            text: `This address is now associated with your restaurant account. The previous address was ${oldEmail}. If you did not make this change, contact support.`
+        }
+    ]);
+
+    if (failedCount) {
+        return res.status(502).json({
+            success: false,
+            emailUpdated: true,
+            message: 'Email was updated, but one or more notification emails could not be sent',
+            notificationFailures: failedCount
+        });
+    }
+    res.status(200).json({ success: true, data: { email: updatedUser.email } });
+};
 
 //@desc      Log user out / clear cookie
 //@route     GET /api/v1/auth/logout

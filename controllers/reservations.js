@@ -1,6 +1,8 @@
 const mongoose = require('mongoose');
 const Reservation = require('../models/Reservation');
 const Restaurant = require('../models/Restaurant');
+const User = require('../models/User');
+const { sendNotifications } = require('../utils/notifications');
 const restaurantDetails = { path: 'restaurant', select: 'name address tel openTime closeTime' };
 
 function ownershipFilter(req, res) {
@@ -65,8 +67,28 @@ exports.updateReservation = async (req, res) => {
     updates.restaurant = body.restaurant;
   }
   const reservation = await Reservation.findOneAndUpdate(filter, { $set: updates },
-    { new: true, runValidators: true }).populate(restaurantDetails);
+    { returnDocument: 'after', runValidators: true }).populate(restaurantDetails);
   if (!reservation) return notFound(res);
+  const user = await User.findById(reservation.user).select('name email');
+  if (!user) {
+    return res.status(502).json({
+      success: false,
+      reservationUpdated: true,
+      message: 'Reservation was updated, but its user could not be notified'
+    });
+  }
+  const { failedCount } = await sendNotifications([{
+    to: user.email,
+    subject: 'Your restaurant reservation was updated',
+    text: `Hello ${user.name}, your reservation at ${reservation.restaurant.name} was updated. Date: ${reservation.reservationDate.toISOString().slice(0, 10)}. Tables: ${reservation.tables}.`
+  }]);
+  if (failedCount) {
+    return res.status(502).json({
+      success: false,
+      reservationUpdated: true,
+      message: 'Reservation was updated, but the notification email could not be sent'
+    });
+  }
   res.status(200).json({ success: true, data: reservation });
 };
 exports.deleteReservation = async (req, res) => {
