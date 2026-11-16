@@ -18,3 +18,14 @@ The table limit is currently interpreted as 1-3 tables per reservation. Any tota
 Use validated document save/create for writes. Query updates require runValidators: true. References do not enforce foreign keys: future handlers must check referenced users and restaurants exist. Opening hours and availability must also be checked by future handlers.
 
 Future API: registration with name, tel, email and password; login/logout; restaurant list; create/view/edit/delete own reservations; admins can view/edit/delete any reservation. Public registration must not allow selecting admin. These permissions are not implemented by database models alone.
+
+## Authentication (requirements 1 and 2)
+
+Run npm start (or npm run dev) from this folder. Default port: 5001, configured in config/config.env. JWT_SECRET must be a private random value; JWT_EXPIRE=30d and JWT_COOKIE_EXPIRE=30 follow VacQ.
+
+- POST http://localhost:5001/api/v1/auth/register ? JSON name, tel, email, password. Returns 200 with JWT and HTTP-only token cookie. Public registration always creates a user.
+- POST http://localhost:5001/api/v1/auth/login ? JSON email, password. Returns the same token response.
+- GET http://localhost:5001/api/v1/auth/me ? Authorization: Bearer TOKEN.
+- GET http://localhost:5001/api/v1/auth/logout ? Authorization: Bearer TOKEN; replaces the token cookie, following VacQ. Previously issued bearer JWTs remain valid until expiration; remove the token from Postman after logout.
+
+Import postman/restaurant-auth.postman_collection.json into Postman. Change email for each new registration; registration/login automatically save token for the protected requests. Set Body to raw JSON for POST requests. The API uses Express, Mongoose, bcryptjs, jsonwebtoken, cookie-parser, rate limiting and Mongo sanitization as in VacQ. No reservation endpoints are included yet.
