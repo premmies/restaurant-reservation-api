@@ -9,6 +9,7 @@ app.use(mongoSanitize());
 app.use(cookieParser());
 app.set('query parser', 'extended');
 app.use('/api/v1/auth', require('./routes/auth'));
+app.use('/api/v1/admin', require('./routes/admin'));
 app.use('/api/v1/restaurants', require('./routes/restaurants'));
 app.use('/api/v1/reservations', require('./routes/reservations'));
 app.use((err, req, res, next) => {
