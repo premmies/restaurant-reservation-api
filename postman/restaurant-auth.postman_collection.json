@@ -1,6 +1,6 @@
 {
   "info": {
-    "name": "Restaurant Auth - Requirements 1 and 2",
+    "name": "Restaurant API - Requirements 1 to 3",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -18,6 +18,10 @@
     },
     {
       "key": "token",
+      "value": ""
+    },
+    {
+      "key": "restaurantId",
       "value": ""
     }
   ],
@@ -93,6 +97,70 @@
               "pm.test('Status is 200', () => pm.response.to.have.status(200));",
               "pm.test('Request succeeded', () => pm.expect(pm.response.json().success).to.eql(true));",
               "if (pm.response.json().token) pm.collectionVariables.set('token', pm.response.json().token);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "List restaurants",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/restaurants"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+              "const restaurants = pm.response.json().data;",
+              "pm.collectionVariables.set('restaurantId', restaurants.length ? restaurants[0]._id : '');"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Create reservation",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/restaurants/{{restaurantId}}/reservations",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"reservationDate\": \"2026-12-01\",\n  \"tables\": 2\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+              "pm.test('Reservation created', () => pm.expect(pm.response.json().success).to.eql(true));"
             ]
           }
         }

@@ -9,6 +9,7 @@ app.use(mongoSanitize());
 app.use(cookieParser());
 app.set('query parser', 'extended');
 app.use('/api/v1/auth', require('./routes/auth'));
+app.use('/api/v1/restaurants', require('./routes/restaurants'));
 app.use((err, req, res, next) => {
   const status = err.status || (err.name === 'ValidationError' || err.code === 11000 ? 400 : 500);
   res.status(status).json({ success: false, message: status === 500 ? 'Server error' : 'Invalid request' });
