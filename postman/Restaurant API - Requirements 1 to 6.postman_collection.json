@@ -1,0 +1,605 @@
+{
+  "info": {
+    "_postman_id": "baec1b00-7181-4783-b455-4a8fc13ca9e9",
+    "name": "Restaurant API - Requirements 1 to 6",
+    "description": "Run the requests in order. Change email for each new registration and ensure at least one restaurant exists. For admin requirements, set adminEmail and adminPassword for an existing admin and set adminReservationId to a disposable reservation owned by another user; the admin delete request permanently deletes it.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "43210655"
+  },
+  "item": [
+    {
+      "name": "User - Requirements 1 to 6",
+      "item": [
+        {
+          "name": "Register",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Response is valid JSON', () => {\n    pm.response.to.be.json;\n});\n\nconst data = pm.response.json();\npm.test('Requirement 1: user can register with name, telephone, email and password', () => {\n  pm.response.to.have.status(200);\n  pm.expect(data.success).to.eql(true);\n  pm.expect(data.name).to.eql('Postman Test');\n  pm.expect(data.email).to.be.a('string').and.not.empty;\n  pm.expect(data.token).to.be.a('string').and.not.empty;\n});\n\nif (data.token) pm.collectionVariables.set('token', data.token);\nif (data._id) pm.collectionVariables.set('userId', data._id);\nif (data.email) pm.collectionVariables.set('email', data.email);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Postman Test\",\n  \"tel\": \"0812345675\",\n  \"email\": \"{{$timestamp}}@example.com\",\n  \"password\": \"{{password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json();\n\npm.test('Requirement 2: registered user can log in with email and password', () => {\n  pm.response.to.have.status(200);\n  pm.expect(data.success).to.eql(true);\n  pm.expect(data.token).to.be.a('string').and.not.empty;\n});\n\nif (pm.response.code === 200) {\n  if (data.token) {\n    pm.collectionVariables.set('token', data.token);\n  }\n  const userObj = data.data || data.user || data;\n  if (userObj._id) {\n    pm.collectionVariables.set('userId', String(userObj._id));\n  }\n  if (userObj.email) {\n    pm.collectionVariables.set('email', userObj.email);\n  }\n}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get current user",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json();\nif (pm.response.code === 200 && data.data?._id) {\n  pm.collectionVariables.set('userId', String(data.data._id));\n}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "me"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List restaurants",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json();",
+                  "pm.test('Requirement 3: restaurant list provides required information', () => {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(data.success).to.eql(true);",
+                  "  pm.expect(data.data).to.be.an('array').that.is.not.empty;",
+                  "  ['name', 'address', 'tel', 'openTime', 'closeTime'].forEach(field => {",
+                  "    pm.expect(data.data[0], `restaurant ${field}`).to.have.property(field);",
+                  "  });",
+                  "});",
+                  "const restaurants = data.data || [];",
+                  "pm.collectionVariables.set('restaurantId', restaurants.length ? restaurants[0]._id : '');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/restaurants",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "restaurants"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create reservation",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Response time is less than 500ms\", () => {\n    pm.expect(pm.response.responseTime).to.be.below(500);\n});\n\npm.test(\"Content-Type is application/json\", () => {\n    pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\");\n});\n\npm.test(\"Requirement 3: user can reserve the requested date, restaurant and up to 3 tables\", () => {\n    pm.response.to.have.status(201);\n\n    const data = pm.response.json();\n    pm.expect(data.success).to.eql(true);\n    pm.expect(data.data).to.be.an(\"object\");\n\n    pm.expect(data.data.tables).to.eql(3);\n    pm.expect(data.data.reservationDate).to.include(\"2026-12-01\");\n\n    // Handles both plain ObjectId strings and populated objects\n    const returnedRestaurantId = data.data.restaurant?._id || data.data.restaurant;\n    const returnedUserId = data.data.user?._id || data.data.user;\n\n    pm.expect(String(returnedRestaurantId)).to.eql(pm.collectionVariables.get(\"restaurantId\"));\n    pm.expect(String(returnedUserId)).to.eql(pm.collectionVariables.get(\"userId\"));\n\n    // Save reservationId only after all assertions pass\n    if (data.data._id) {\n        pm.collectionVariables.set(\"reservationId\", data.data._id);\n    }\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reservationDate\": \"2026-12-01\",\n  \"tables\": 3\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/restaurants/{{restaurantId}}/reservations",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "restaurants",
+                "{{restaurantId}}",
+                "reservations"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "My reservations",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json();",
+                  "pm.test('Requirement 4: registered user can view their reservations only', () => {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(data.success).to.eql(true);",
+                  "  pm.expect(data.data.some(item => item._id === pm.collectionVariables.get('reservationId'))).to.eql(true);",
+                  "  pm.expect(data.data.every(item => String(item.user) === pm.collectionVariables.get('userId'))).to.eql(true);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/reservations",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservations"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get my reservation",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json();",
+                  "pm.test('Requirement 4: registered user can view an individual reservation', () => {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(data.success).to.eql(true);",
+                  "  pm.expect(data.data._id).to.eql(pm.collectionVariables.get('reservationId'));",
+                  "  pm.expect(String(data.data.user)).to.eql(pm.collectionVariables.get('userId'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/reservations/{{reservationId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservations",
+                "{{reservationId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Edit my reservation",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json();",
+                  "pm.test('Requirement 5: registered user can edit their reservation', () => {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(data.success).to.eql(true);",
+                  "  pm.expect(data.data.tables).to.eql(2);",
+                  "  pm.expect(data.data.reservationDate).to.include('2026-12-02');",
+                  "  pm.expect(data.data._id).to.eql(pm.collectionVariables.get('reservationId'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reservationDate\": \"2026-12-02\",\n  \"tables\": 2\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/reservations/{{reservationId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservations",
+                "{{reservationId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete my reservation",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Requirement 6: registered user can delete their reservation', () => {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json().success).to.eql(true);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/reservations/{{reservationId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservations",
+                "{{reservationId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Confirm my reservation was deleted",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Requirement 6: deleted reservation is no longer available', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/reservations/{{reservationId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservations",
+                "{{reservationId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Logout Copy",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Requirement 2: registered user can log out', () => {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json().success).to.eql(true);",
+                  "  pm.expect(pm.response.headers.get('Set-Cookie')).to.match(/token=none/i);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "logout"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Verify logout invalidates token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Requirement 2: logged-out user token is rejected', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "me"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5001/api/v1"
+    },
+    {
+      "key": "email",
+      "value": "postman-tester@example.com"
+    },
+    {
+      "key": "password",
+      "value": "TestPassword123!"
+    },
+    {
+      "key": "token",
+      "secret": true
+    },
+    {
+      "key": "restaurantId",
+      "value": ""
+    },
+    {
+      "key": "reservationId",
+      "value": ""
+    },
+    {
+      "key": "adminEmail",
+      "value": "1794828089@example.com"
+    },
+    {
+      "key": "adminPassword",
+      "value": ""
+    },
+    {
+      "key": "adminToken",
+      "secret": true
+    },
+    {
+      "key": "adminReservationId",
+      "value": ""
+    },
+    {
+      "key": "userId",
+      "value": ""
+    },
+    {
+      "key": "adminUserId",
+      "value": ""
+    },
+    {
+      "key": "adminTargetOwnerId",
+      "value": ""
+    }
+  ]
+}
