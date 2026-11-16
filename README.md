@@ -26,7 +26,7 @@ Run npm start (or npm run dev) from this folder. Default port: 5001, configured 
 - POST http://localhost:5001/api/v1/auth/register ? JSON name, tel, email, password. Returns 200 with JWT and HTTP-only token cookie. Public registration always creates a user.
 - POST http://localhost:5001/api/v1/auth/login ? JSON email, password. Returns the same token response.
 - GET http://localhost:5001/api/v1/auth/me ? Authorization: Bearer TOKEN.
-- GET http://localhost:5001/api/v1/auth/logout ? Authorization: Bearer TOKEN; replaces the token cookie, following VacQ. Previously issued bearer JWTs remain valid until expiration; remove the token from Postman after logout.
+- GET http://localhost:5001/api/v1/auth/logout ? Authorization: Bearer TOKEN; invalidates all JWTs issued for that account and clears the token cookie. Log in again to receive a valid token.
 
 Import postman/restaurant-auth.postman_collection.json into Postman. Change email for each new registration; registration/login automatically save token for the protected requests. Set Body to raw JSON for POST requests. The API uses Express, Mongoose, bcryptjs, jsonwebtoken, cookie-parser, rate limiting and Mongo sanitization as in VacQ. Reservation routes are documented below.
 

@@ -18,11 +18,13 @@ exports.protect=async (req,res,next)=>{
         //Verify token
         const decoded = jwt.verify(token,process.env.JWT_SECRET);
 
-
-
         req.user=await User.findById(decoded.id);
 
         if (!req.user) return res.status(401).json({success:false, message:'User no longer exists'});
+        const tokenVersion = decoded.tokenVersion === undefined ? 0 : decoded.tokenVersion;
+        if (!Number.isInteger(tokenVersion) || tokenVersion !== req.user.tokenVersion) {
+            return res.status(401).json({success:false, message:'Not authorize to access this route'});
+        }
         next();
     }catch(err){
 

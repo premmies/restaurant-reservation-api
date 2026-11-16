@@ -45,6 +45,11 @@ async function run() {
   const logout = await request('/logout', null, login.body.token);
   assert.equal(logout.status, 200);
   assert.match(logout.cookie, /token=none/);
+  assert.equal((await request('/me', null, login.body.token)).status, 401);
+  assert.equal((await request('/me', null, registered.body.token)).status, 401);
+  const relogin = await request('/login', { email, password: data.password });
+  assert.equal(relogin.status, 200);
+  assert.equal((await request('/me', null, relogin.body.token)).status, 200);
   console.log('Auth integration passed: registration, telephone, password hashing, role safety, duplicate rejection, login, protected profile and logout.');
 }
 run().catch(err => { console.error(err.message); process.exitCode = 1; }).finally(async () => {

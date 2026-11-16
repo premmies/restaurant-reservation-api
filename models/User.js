@@ -8,7 +8,8 @@ const schema = new mongoose.Schema({
   email: { type: String, required: true, unique: true, lowercase: true,
     trim: true, match: /^[^\s@]+@[^\s@]+\.[^\s@]+$/ },
   password: { type: String, required: true, minlength: 6, select: false },
-  role: { type: String, enum: ['user', 'admin'], default: 'user' }
+  role: { type: String, enum: ['user', 'admin'], default: 'user' },
+  tokenVersion: { type: Number, default: 0 }
 }, { timestamps: true });
 
 schema.pre('save', async function () {
@@ -18,6 +19,7 @@ schema.methods.matchPassword = function (password) {
   return bcrypt.compare(password, this.password);
 };
 schema.methods.getSignedJwtToken = function () {
-  return jwt.sign({ id: this._id }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRE });
+  return jwt.sign({ id: this._id, tokenVersion: this.tokenVersion }, process.env.JWT_SECRET,
+    { expiresIn: process.env.JWT_EXPIRE });
 };
 module.exports = mongoose.model('User', schema);
